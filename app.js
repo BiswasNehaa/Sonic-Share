@@ -1,10 +1,7 @@
-// 1. VARIABLES - Keeping track of everything
 const shortId = Math.floor(1000 + Math.random() * 9000).toString();
 const peer = new Peer(shortId); 
 let conn;
-let receivedChunks = [];
 
-// UI Elements
 const status = document.getElementById('status');
 const sendBtn = document.getElementById('sendBtn');
 const receiveBtn = document.getElementById('receiveBtn');
@@ -12,120 +9,131 @@ const fileInput = document.getElementById('fileInput');
 const visualizer = document.getElementById('visualizer');
 const ctx = visualizer.getContext('2d');
 
-// 2. PEER SETUP
+// --- 1. Peer Setup ---
 peer.on('open', (id) => {
-    status.innerText = "Your ID: " + id;
-    console.log("My ID is: " + id);
+    status.innerText = "Your Sonic ID: " + id;
 });
 
-// 3. SOUND GENERATOR - The "Whistle"
+// --- 2. The Whistle (Sender) ---
 async function whistleId(id) {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+
     let time = audioCtx.currentTime;
+    // Add a 'Start' tone (16kHz) so the receiver knows a message is coming
+    playTone(16000, time, 0.3, audioCtx);
+    time += 0.4;
 
-    // Convert the 4-digit ID into 4 distinct tones
     id.split('').forEach(digit => {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        
         const freq = 17000 + (parseInt(digit) * 200); 
-        
-        osc.frequency.setValueAtTime(freq, time);
-        gain.gain.setValueAtTime(0, time);
-        gain.gain.linearRampToValueAtTime(0.3, time + 0.05);
-        gain.gain.linearRampToValueAtTime(0, time + 0.25);
-
-        osc.connect(gain).connect(audioCtx.destination);
-        osc.start(time);
-        osc.stop(time + 0.3);
+        playTone(freq, time, 0.2, audioCtx);
         time += 0.3; 
     });
-    
-    status.innerText = "Whistling ID: " + id;
+    status.innerText = "Broadcasting Sonic ID...";
 }
 
-// 4. THE EAR - Listening for the Whistle
+function playTone(freq, startTime, duration, ctx) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.frequency.setValueAtTime(freq, startTime);
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(0.3, startTime + 0.05);
+    gain.gain.linearRampToValueAtTime(0, startTime + duration);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(startTime);
+    osc.stop(startTime + duration);
+}
+
+// --- 3. The Decoder (Receiver) ---
+let detectedDigits = "";
+let lastDetectionTime = 0;
+
 async function startListening() {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const audioCtx = new AudioContext();
     const source = audioCtx.createMediaStreamSource(stream);
     const analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 2048;
+    analyser.fftSize = 4096; // Higher resolution for accuracy
     source.connect(analyser);
 
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-    function render() {
+    function decode() {
         analyser.getByteFrequencyData(dataArray);
-        
+        const now = Date.now();
+
+        // Visualizer
         ctx.clearRect(0, 0, visualizer.width, visualizer.height);
-        for (let i = 0; i < dataArray.length; i++) {
-            ctx.fillStyle = `rgb(56, 189, 248)`;
-            ctx.fillRect(i * 2, visualizer.height - dataArray[i]/2, 1, dataArray[i]/2);
+        ctx.fillStyle = '#38bdf8';
+        for (let i = 0; i < 200; i++) {
+            ctx.fillRect(i * 3, visualizer.height - dataArray[i + 1000] / 2, 2, dataArray[i + 1000] / 2);
         }
 
-        const targetBin = Math.round(18000 / (audioCtx.sampleRate / analyser.fftSize));
-        if (dataArray[targetBin] > 150) {
-            status.innerText = "Sound Detected!";
+        // Search for digits (17000Hz to 18800Hz)
+        if (now - lastDetectionTime > 250) { 
+            for (let digit = 0; digit <= 9; digit++) {
+                const targetFreq = 17000 + (digit * 200);
+                const bin = Math.round(targetFreq / (audioCtx.sampleRate / analyser.fftSize));
+                
+                if (dataArray[bin] > 180) { // Threshold for detection
+                    detectedDigits += digit;
+                    lastDetectionTime = now;
+                    status.innerText = "Hearing: " + detectedDigits;
+                    
+                    if (detectedDigits.length === 4) {
+                        autoConnect(detectedDigits);
+                        detectedDigits = ""; // Reset
+                    }
+                    break;
+                }
+            }
         }
-        requestAnimationFrame(render);
+        requestAnimationFrame(decode);
     }
-    render();
+    decode();
 }
 
-// 5. SENDING THE FILE
+function autoConnect(targetId) {
+    status.innerText = "Auto-Connecting to " + targetId + "...";
+    conn = peer.connect(targetId);
+    setupConnection();
+}
+
+// --- 4. Connection Logic ---
 sendBtn.onclick = () => {
     const file = fileInput.files[0];
-    if (!file) return alert("Please select a file first!");
-    
-    whistleId(peer.id); 
-    
-    const targetId = prompt("Enter the Receiver's 4-digit ID:");
-    
-    if (targetId) {
-        status.innerText = "Connecting...";
-        conn = peer.connect(targetId);
-        
-        conn.on('open', () => {
-            status.innerText = "Sending: " + file.name;
-            
-            conn.send({
-                fileData: file,
-                fileName: file.name,
-                fileType: file.type
-            });
-
-            setTimeout(() => {
-                status.innerText = "File Sent Successfully!";
-            }, 2000);
-        });
-    }
+    if (!file) return alert("Select a file!");
+    whistleId(peer.id);
 };
 
-// 6. RECEIVING THE FILE
 receiveBtn.onclick = () => {
     startListening();
+    status.innerText = "Listening for Sonic ID...";
 };
 
 peer.on('connection', (connection) => {
     conn = connection;
-    status.innerText = "Connected!";
+    setupConnection();
+});
+
+function setupConnection() {
+    conn.on('open', () => {
+        status.innerText = "Link Established!";
+        const file = fileInput.files[0];
+        if (file) {
+            conn.send({ fileData: file, fileName: file.name, fileType: file.type });
+        }
+    });
 
     conn.on('data', (data) => {
         if (data.fileData) {
-            status.innerText = "Receiving: " + data.fileName;
-            
             const blob = new Blob([data.fileData], { type: data.fileType });
             const url = URL.createObjectURL(blob);
-            
             const a = document.createElement('a');
             a.href = url;
-            a.download = data.fileName; 
-            document.body.appendChild(a);
+            a.download = data.fileName;
             a.click();
-            document.body.removeChild(a);
-            
-            status.innerText = "File Received!";
+            status.innerText = "Received: " + data.fileName;
         }
     });
-});
+}
