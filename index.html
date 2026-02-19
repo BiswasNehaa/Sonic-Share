@@ -17,18 +17,26 @@
         <p class="subtitle">Direct device-to-device sharing using ultrasonic pairing. <br>No storage, no logs, just post.</p>
         
         <div id="status" class="status-indicator">Ready to connect</div>
-
         <div class="action-buttons">
-            <label for="fileInput" class="btn btn-primary">
-                📤 Send Files
-            </label>
+            <button type="button" class="btn btn-outline" onclick="document.getElementById('fileInput').click()">
+                📂 Browse File
+            </button>
             <input type="file" id="fileInput" hidden>
+
+            <div id="file-preview-card" style="display: none; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin: 20px 0; border: 1px solid rgba(255,255,255,0.1); text-align: left;">
+                <p id="preview-name" style="font-weight: bold; color: #fff; margin: 0;"></p>
+                <p id="preview-size" style="font-size: 0.8rem; color: #6699ff; margin: 4px 0 0 0;"></p>
+            </div>
+
+            <button id="realSendBtn" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+                🚀 Send File
+            </button>
             
-            <button id="receiveBtn" class="btn btn-outline">
-                📥 Receive Files
+            <button id="receiveBtn" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">
+                📥 Receive Mode
             </button>
         </div>
-
+        
         <canvas id="visualizer"></canvas>
     </main>
 

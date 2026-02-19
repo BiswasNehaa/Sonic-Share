@@ -1,39 +1,117 @@
-const receiveBtn = document.getElementById('receiveBtn');
+// 1. VARIABLES & INITIALIZATION
+const shortId = Math.floor(1000 + Math.random() * 9000).toString();
+const peer = new Peer(shortId); 
+let conn;
 
-receiveBtn.onclick = async () => {
-    document.getElementById('status').innerText = "Listening for sound signal...";
-    
-    // 1. Get Microphone Access
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const source = audioCtx.createMediaStreamSource(stream);
-    const analyser = audioCtx.createAnalyser();
-    
-    analyser.fftSize = 2048; // High resolution for detecting high pitches
-    source.connect(analyser);
+const status = document.getElementById('status');
+const fileInput = document.getElementById('fileInput');
+const realSendBtn = document.getElementById('realSendBtn');
+const previewCard = document.getElementById('file-preview-card');
+const previewName = document.getElementById('preview-name');
+const previewSize = document.getElementById('preview-size');
 
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
+// 2. PEER STATUS
+peer.on('open', (id) => {
+    status.innerText = "Your ID: " + id;
+    console.log("PeerID generated: " + id);
+});
 
-    // 2. Scan for the 18kHz Peak
-    function detect() {
-        analyser.getByteFrequencyData(dataArray);
+// 3. FILE SELECTION LOGIC
+fileInput.onchange = () => {
+    const file = fileInput.files[0];
+    if (file) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
         
-        // Calculate which 'bin' (index) corresponds to 18000Hz
-        const nyquist = audioCtx.sampleRate / 2;
-        const targetBin = Math.round((18000 / nyquist) * bufferLength);
-        
-        // If the volume at that 18kHz bin is high, we've found our signal!
-        if (dataArray[targetBin] > 200) { 
-            console.log("Signal Detected! Connecting...");
-            document.getElementById('status').innerText = "Signal Caught! Linking...";
-            
-            // In a real app, you'd decode the full ID here. 
-            // For now, let's assume we use a 'public room' or a static ID.
-            connectToPeer('target-id-from-sound');
-            return; // Stop listening once connected
-        }
-        requestAnimationFrame(detect);
+        // Visual feedback that file is chosen
+        previewCard.style.display = 'block';
+        previewName.innerText = "📄 " + file.name;
+        previewSize.innerText = sizeMB + " MB";
+        status.innerText = "File Attached & Ready";
     }
-    detect();
 };
+
+// 4. WHISTLE LOGIC
+async function whistleId(id) {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+    let time = audioCtx.currentTime;
+
+    id.split('').forEach(digit => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const freq = 17000 + (parseInt(digit) * 200); 
+        osc.frequency.setValueAtTime(freq, time);
+        gain.gain.setValueAtTime(0, time);
+        gain.gain.linearRampToValueAtTime(0.3, time + 0.05);
+        gain.gain.linearRampToValueAtTime(0, time + 0.25);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start(time); 
+        osc.stop(time + 0.3);
+        time += 0.3; 
+    });
+}
+
+// 5. THE SEND BUTTON ACTION
+realSendBtn.onclick = () => {
+    const file = fileInput.files[0];
+
+    // Check if file exists - Your requested popup
+    if (!file) {
+        alert("Wait! You didn't choose a file. Please click 'Browse File' first.");
+        return; 
+    }
+
+    // Trigger Whistle
+    whistleId(peer.id);
+    
+    // Connect via Manual Code
+    const targetId = prompt("Enter the Receiver's 4-digit ID:");
+    if (targetId) {
+        status.innerText = "Connecting to " + targetId + "...";
+        conn = peer.connect(targetId);
+        setupConnection(file); 
+    }
+};
+
+// 6. RECEIVE BUTTON
+document.getElementById('receiveBtn').onclick = () => {
+    status.innerText = "Waiting for incoming connection...";
+};
+
+// Handle Incoming Connection
+peer.on('connection', (connection) => {
+    conn = connection;
+    setupConnection();
+});
+
+// 7. DATA TRANSFER LOGIC
+function setupConnection(fileToSend = null) {
+    conn.on('open', async () => {
+        status.innerText = "Connected!";
+        
+        if (fileToSend) {
+            status.innerText = "Sending raw data...";
+            // Stripping metadata by sending ArrayBuffer
+            const buffer = await fileToSend.arrayBuffer();
+            conn.send({
+                fileData: buffer,
+                fileName: fileToSend.name,
+                fileType: fileToSend.type,
+                fileSize: (fileToSend.size / (1024 * 1024)).toFixed(2)
+            });
+            setTimeout(() => { status.innerText = "Transfer Successful!"; }, 2000);
+        }
+    });
+
+    conn.on('data', (data) => {
+        if (data.fileData) {
+            status.innerText = `Received: ${data.fileName} (${data.fileSize} MB)`;
+            const blob = new Blob([data.fileData], { type: data.fileType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = data.fileName;
+            a.click();
+        }
+    });
+}
