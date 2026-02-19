@@ -1,0 +1,41 @@
+body {
+    background: radial-gradient(circle at top right, #1e293b, #0f172a); /* Deep space gradient */
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.main-card {
+    background: rgba(255, 255, 255, 0.05); /* See-through glass */
+    backdrop-filter: blur(15px); /* Blur effect */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 3rem;
+    border-radius: 30px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    width: 350px;
+    position: relative;
+}
+
+/* Add a glowing orb behind the card for a "High-Tech" feel */
+.main-card::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    left: -50px;
+    width: 150px;
+    height: 150px;
+    background: #3b82f6;
+    filter: blur(80px);
+    z-index: -1;
+}
+
+.status-box {
+    border: 1px solid #38bdf8;
+    background: rgba(56, 189, 248, 0.1);
+    color: #38bdf8;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.8rem;
+}

@@ -3,29 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SonicDrop | P2P Transfer</title>
+    <title>SonicDrop | File Transfer</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>🚀 SonicDrop</h1>
-        <p>Transfer files via silent sound waves</p>
+        <header>
+            <h1>🚀 SonicDrop</h1>
+            <p>P2P Transfer via Ultrasonic Waves</p>
+        </header>
 
-        <div id="status" class="status">Ready</div>
+        <div class="main-card">
+            <div id="status" class="status-box">Initializing Peer...</div>
+            
+            <canvas id="visualizer"></canvas>
 
-        <div class="actions">
-            <button id="sendBtn">Send File</button>
-            <button id="receiveBtn">Receive File</button>
-        </div>
+            <div class="controls">
+                <input type="file" id="fileInput" class="hidden-input">
+                <label for="fileInput" class="btn secondary">📁 Select File</label>
+                <button id="sendBtn" class="btn primary">⚡ Send File</button>
+                <button id="receiveBtn" class="btn primary">👂 Receive File</button>
+            </div>
 
-        <input type="file" id="fileInput" hidden>
-        <div id="transfer-box" class="hidden">
-            <p id="file-info"></p>
-            <progress id="progressBar" value="0" max="100"></progress>
+            <div id="progressContainer" style="display: none;">
+                <p id="progressText">Transferring: 0%</p>
+                <progress id="progressBar" value="0" max="100"></progress>
+            </div>
         </div>
     </div>
+
     <script src="app.js"></script>
-    <canvas id="visualizer" width="400" height="100"></canvas>
+    <div class="logo-area">
+    <div class="pulse-icon">🔊</div>
+    <h1 style="background: linear-gradient(to right, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+        SonicDrop
+    </h1>
+</div>
 </body>
 </html>
