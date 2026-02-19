@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SonicDrop | P2P Transfer</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 SonicDrop</h1>
+        <p>Transfer files via silent sound waves</p>
+
+        <div id="status" class="status">Ready</div>
+
+        <div class="actions">
+            <button id="sendBtn">Send File</button>
+            <button id="receiveBtn">Receive File</button>
+        </div>
+
+        <input type="file" id="fileInput" hidden>
+        <div id="transfer-box" class="hidden">
+            <p id="file-info"></p>
+            <progress id="progressBar" value="0" max="100"></progress>
+        </div>
+    </div>
+    <script src="app.js"></script>
+    <canvas id="visualizer" width="400" height="100"></canvas>
+</body>
+</html>
