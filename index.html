@@ -3,42 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SonicDrop | File Transfer</title>
+    <title>justPost | Secure P2P Transfer</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🚀 SonicDrop</h1>
-            <p>P2P Transfer via Ultrasonic Waves</p>
-        </header>
+    <nav class="navbar">
+        <div class="logo">⚡ <strong>justPost</strong></div>
+        <div class="security-tag">🔒 End-to-End Encrypted</div>
+    </nav>
 
-        <div class="main-card">
-            <div id="status" class="status-box">Initializing Peer...</div>
+    <main class="hero">
+        <h1>Transfer files <br><span class="highlight">peer-to-peer.</span> <br>Securely.</h1>
+        <p class="subtitle">Direct device-to-device sharing using ultrasonic pairing. <br>No storage, no logs, just post.</p>
+        
+        <div id="status" class="status-indicator">Ready to connect</div>
+
+        <div class="action-buttons">
+            <label for="fileInput" class="btn btn-primary">
+                📤 Send Files
+            </label>
+            <input type="file" id="fileInput" hidden>
             
-            <canvas id="visualizer"></canvas>
-
-            <div class="controls">
-                <input type="file" id="fileInput" class="hidden-input">
-                <label for="fileInput" class="btn secondary">📁 Select File</label>
-                <button id="sendBtn" class="btn primary">⚡ Send File</button>
-                <button id="receiveBtn" class="btn primary">👂 Receive File</button>
-            </div>
-
-            <div id="progressContainer" style="display: none;">
-                <p id="progressText">Transferring: 0%</p>
-                <progress id="progressBar" value="0" max="100"></progress>
-            </div>
+            <button id="receiveBtn" class="btn btn-outline">
+                📥 Receive Files
+            </button>
         </div>
-    </div>
 
+        <canvas id="visualizer"></canvas>
+    </main>
+
+    <section class="info-grid">
+        <div class="info-card">
+            <div class="icon">📁</div>
+            <h3>Select File</h3>
+            <p>Choose any file to generate a unique sonic signature.</p>
+        </div>
+        <div class="info-card">
+            <div class="icon">🔊</div>
+            <h3>Sonic Sync</h3>
+            <p>Devices pair automatically using high-frequency audio.</p>
+        </div>
+        <div class="info-card">
+            <div class="icon">🛡️</div>
+            <h3>Direct Transfer</h3>
+            <p>Data moves directly between devices, never touching a server.</p>
+        </div>
+    </section>
+
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="app.js"></script>
-    <div class="logo-area">
-    <div class="pulse-icon">🔊</div>
-    <h1 style="background: linear-gradient(to right, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-        SonicDrop
-    </h1>
-</div>
 </body>
 </html>
